@@ -6,39 +6,89 @@ using System.Collections.Generic;
 namespace FastColoredTextBoxNS
 {
     /// <summary>
-    /// Style of chars
+    /// Base class for all text rendering styles.
     /// </summary>
-    /// <remarks>This is base class for all text and design renderers</remarks>
+    /// <remarks>
+    /// <para>
+    /// The Style class is the foundation of the styling system in FastColoredTextBox.
+    /// It defines how ranges of text should be visually rendered. All styles must inherit
+    /// from this class and implement the Draw() method.
+    /// </para>
+    /// <para>
+    /// Key concepts:
+    /// - Each style is stored in the TextSource.Styles array (max 16 or 32 styles)
+    /// - Characters reference styles through a bit mask in their StyleIndex
+    /// - Multiple styles can be applied to the same character
+    /// - Styles support export to HTML and RTF formats
+    /// </para>
+    /// <para>
+    /// Common style implementations include:
+    /// - TextStyle: Renders colored text with font variations
+    /// - SelectionStyle: Renders selection highlighting
+    /// - FoldedBlockStyle: Renders collapsed code blocks
+    /// - Custom styles for special rendering effects
+    /// </para>
+    /// </remarks>
     public abstract class Style : IDisposable
     {
         /// <summary>
-        /// This style is exported to outer formats (HTML for example)
+        /// Gets or sets a value indicating whether this style should be exported to external formats.
         /// </summary>
+        /// <remarks>
+        /// When true (default), this style will be included when exporting to HTML, RTF, or other
+        /// formats. Set to false for styles that are purely visual aids (like selection highlighting)
+        /// that shouldn't appear in exported documents.
+        /// </remarks>
         public virtual bool IsExportable { get; set; }
+
         /// <summary>
-        /// Occurs when user click on StyleVisualMarker joined to this style 
+        /// Occurs when a user clicks on a StyleVisualMarker associated with this style.
         /// </summary>
+        /// <remarks>
+        /// StyleVisualMarkers are interactive UI elements that can be added by styles during
+        /// rendering. This event allows handling user interaction with those markers, enabling
+        /// features like clickable hyperlinks, expandable code blocks, or interactive tooltips.
+        /// </remarks>
         public event EventHandler<VisualMarkerEventArgs> VisualMarkerClick;
 
         /// <summary>
-        /// Constructor
+        /// Initializes a new instance of the Style class.
         /// </summary>
+        /// <remarks>
+        /// Sets IsExportable to true by default, making the style visible in exported documents.
+        /// </remarks>
         public Style()
         {
             IsExportable = true;
         }
 
         /// <summary>
-        /// Renders given range of text
+        /// Renders the specified range of text with this style.
         /// </summary>
-        /// <param name="gr">Graphics object</param>
-        /// <param name="position">Position of the range in absolute control coordinates</param>
-        /// <param name="range">Rendering range of text</param>
+        /// <param name="gr">The Graphics object to draw on</param>
+        /// <param name="position">The position in absolute control coordinates where rendering should start</param>
+        /// <param name="range">The range of text to render with this style</param>
+        /// <remarks>
+        /// This is the core method that all style implementations must override. It is called
+        /// during the paint cycle for each range of text that has this style applied.
+        /// The implementation should:
+        /// 1. Draw backgrounds (if any) at the specified position
+        /// 2. Draw text characters with appropriate formatting
+        /// 3. Optionally add visual markers for interactivity
+        /// Note: The position is in control coordinates, not screen coordinates.
+        /// </remarks>
         public abstract void Draw(Graphics gr, Point position, Range range);
 
         /// <summary>
-        /// Occurs when user click on StyleVisualMarker joined to this style 
+        /// Raises the VisualMarkerClick event.
         /// </summary>
+        /// <param name="tb">The FastColoredTextBox control where the click occurred</param>
+        /// <param name="args">Event arguments containing information about the visual marker</param>
+        /// <remarks>
+        /// This method is called internally when a user clicks on a visual marker associated
+        /// with this style. Override this method to customize click handling behavior, or
+        /// subscribe to the VisualMarkerClick event in your code.
+        /// </remarks>
         public virtual void OnVisualMarkerClick(FastColoredTextBox tb, VisualMarkerEventArgs args)
         {
             if (VisualMarkerClick != null)
@@ -46,19 +96,48 @@ namespace FastColoredTextBoxNS
         }
 
         /// <summary>
-        /// Shows VisualMarker
-        /// Call this method in Draw method, when you need to show VisualMarker for your style
+        /// Adds a visual marker to the control.
         /// </summary>
+        /// <param name="tb">The FastColoredTextBox control to add the marker to</param>
+        /// <param name="marker">The StyleVisualMarker to add</param>
+        /// <remarks>
+        /// Call this method in your Draw() implementation when you need to add interactive
+        /// visual elements. Visual markers can respond to mouse clicks and other user interactions.
+        /// Examples include clickable hyperlinks, expand/collapse buttons for code folding, or
+        /// custom UI widgets embedded in the text.
+        /// </remarks>
         protected virtual void AddVisualMarker(FastColoredTextBox tb, StyleVisualMarker marker)
         {
             tb.AddVisualMarker(marker);
         }
 
+        /// <summary>
+        /// Gets the size of the specified range in pixels.
+        /// </summary>
+        /// <param name="range">The range to measure</param>
+        /// <returns>A Size structure containing the width and height in pixels</returns>
+        /// <remarks>
+        /// This helper method calculates the rectangular size of a text range based on
+        /// the control's character width and height. It assumes monospaced font rendering.
+        /// Width = (end char - start char) × character width
+        /// Height = character height
+        /// </remarks>
         public static Size GetSizeOfRange(Range range)
         {
             return new Size((range.End.iChar - range.Start.iChar) * range.tb.CharWidth, range.tb.CharHeight);
         }
 
+        /// <summary>
+        /// Creates a GraphicsPath representing a rounded rectangle.
+        /// </summary>
+        /// <param name="rect">The rectangle to round</param>
+        /// <param name="d">The diameter of the rounded corners</param>
+        /// <returns>A GraphicsPath object representing the rounded rectangle</returns>
+        /// <remarks>
+        /// This utility method creates a path for drawing rounded rectangles, commonly used
+        /// for rendering styled backgrounds, tooltips, or selection highlights with rounded corners.
+        /// The corners are circular arcs with diameter d.
+        /// </remarks>
         public static GraphicsPath GetRoundedRectangle(Rectangle rect, int d)
         {
             GraphicsPath gp = new GraphicsPath();
@@ -72,24 +151,42 @@ namespace FastColoredTextBoxNS
             return gp;
         }
 
+        /// <summary>
+        /// Performs cleanup of resources used by this style.
+        /// </summary>
+        /// <remarks>
+        /// Override this method to dispose of any GDI+ resources (brushes, pens, fonts)
+        /// allocated by your style. The base implementation does nothing.
+        /// </remarks>
         public virtual void Dispose()
         {
             ;
         }
 
         /// <summary>
-        /// Returns CSS for export to HTML
+        /// Returns the CSS representation of this style for HTML export.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A CSS string defining this style's visual properties</returns>
+        /// <remarks>
+        /// Override this method to provide CSS styling when exporting to HTML format.
+        /// The returned string should contain valid CSS property declarations without
+        /// selectors (e.g., "color:red;font-weight:bold;"). Return an empty string if
+        /// this style doesn't apply to HTML export.
+        /// </remarks>
         public virtual string GetCSS()
         {
             return "";
         }
 
         /// <summary>
-        /// Returns RTF descriptor for export to RTF
+        /// Returns the RTF style descriptor for RTF export.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An RTFStyleDescriptor object describing this style in RTF format</returns>
+        /// <remarks>
+        /// Override this method to provide RTF styling when exporting to Rich Text Format.
+        /// The RTFStyleDescriptor contains properties for colors, font styles, and RTF-specific
+        /// formatting tags. Return an empty descriptor if this style doesn't apply to RTF export.
+        /// </remarks>
         public virtual RTFStyleDescriptor GetRTF()
         {
             return new RTFStyleDescriptor();
@@ -97,17 +194,59 @@ namespace FastColoredTextBoxNS
     }
 
     /// <summary>
-    /// Style for chars rendering
-    /// This renderer can draws chars, with defined fore and back colors
+    /// A style for rendering colored text with font variations.
     /// </summary>
+    /// <remarks>
+    /// TextStyle is the most commonly used style implementation. It allows rendering text with:
+    /// - Custom foreground color (text color)
+    /// - Custom background color
+    /// - Font style variations (bold, italic, underline, strikeout)
+    /// This style supports export to both HTML and RTF formats.
+    /// </remarks>
     public class TextStyle : Style
     {
+        /// <summary>
+        /// Gets or sets the brush used to draw the text characters.
+        /// </summary>
+        /// <remarks>
+        /// This brush determines the color of the text. If null, the default ForeColor
+        /// of the FastColoredTextBox will be used.
+        /// </remarks>
         public Brush ForeBrush { get; set; }
+
+        /// <summary>
+        /// Gets or sets the brush used to draw the background behind the text.
+        /// </summary>
+        /// <remarks>
+        /// This brush fills the rectangular area behind the text. If null, no background
+        /// is drawn (the control's background shows through).
+        /// </remarks>
         public Brush BackgroundBrush { get; set; }
+
+        /// <summary>
+        /// Gets or sets the font style (bold, italic, underline, strikeout) for the text.
+        /// </summary>
+        /// <remarks>
+        /// This property determines font variations applied to the base font.
+        /// Multiple FontStyle flags can be combined using bitwise OR.
+        /// </remarks>
         public FontStyle FontStyle { get; set; }
-        //public readonly Font Font;
+
+        /// <summary>
+        /// Gets or sets the string format used for rendering text.
+        /// </summary>
+        /// <remarks>
+        /// The string format controls text rendering details. By default, it's configured
+        /// to measure trailing spaces, ensuring proper character spacing.
+        /// </remarks>
         public StringFormat stringFormat;
 
+        /// <summary>
+        /// Initializes a new instance of the TextStyle class.
+        /// </summary>
+        /// <param name="foreBrush">The brush for drawing text (null to use default)</param>
+        /// <param name="backgroundBrush">The brush for drawing background (null for transparent)</param>
+        /// <param name="fontStyle">The font style variations to apply</param>
         public TextStyle(Brush foreBrush, Brush backgroundBrush, FontStyle fontStyle)
         {
             this.ForeBrush = foreBrush;
