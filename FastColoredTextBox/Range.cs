@@ -7,8 +7,28 @@ using System.Collections.Generic;
 namespace FastColoredTextBoxNS
 {
     /// <summary>
-    /// Diapason of text chars
+    /// Represents a contiguous range or selection of text in the FastColoredTextBox.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Range is one of the most important classes in FastColoredTextBox. It represents
+    /// a span of text defined by start and end positions (Place instances). A Range can
+    /// represent:
+    /// - A text selection (what the user has highlighted)
+    /// - A search result
+    /// - A region to apply formatting
+    /// - Any arbitrary text span for manipulation
+    /// </para>
+    /// <para>
+    /// Ranges support two selection modes:
+    /// - Normal mode: Selects text from start to end, wrapping across lines
+    /// - Column mode: Selects a rectangular block of text (same character range on multiple lines)
+    /// </para>
+    /// <para>
+    /// Range provides extensive methods for text manipulation, navigation, and formatting.
+    /// Most text operations in FastColoredTextBox are performed through Range objects.
+    /// </para>
+    /// </remarks>
     public class Range : IEnumerable<Place>
     {
         Place start;
@@ -83,6 +103,21 @@ namespace FastColoredTextBoxNS
             end = new Place(tb[iLine].Count, iLine);
         }
 
+        /// <summary>
+        /// Determines whether this range contains the specified position.
+        /// </summary>
+        /// <param name="place">The position to check</param>
+        /// <returns>true if the position is within this range; otherwise, false</returns>
+        /// <remarks>
+        /// <para>
+        /// In normal selection mode, this checks if the place falls within the start and end
+        /// positions, considering the natural text flow (left-to-right, top-to-bottom).
+        /// </para>
+        /// <para>
+        /// In column selection mode, this checks if the place falls within the rectangular
+        /// region defined by the range (same character positions across multiple lines).
+        /// </para>
+        /// </remarks>
         public bool Contains(Place place)
         {
             if (place.iLine < Math.Min(start.iLine, end.iLine)) return false;
