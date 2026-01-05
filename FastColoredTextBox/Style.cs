@@ -119,7 +119,7 @@ namespace FastColoredTextBoxNS
         /// <remarks>
         /// This helper method calculates the rectangular size of a text range based on
         /// the control's character width and height. It assumes monospaced font rendering.
-        /// Width = (end char - start char) × character width
+        /// Width = (end char - start char) x character width
         /// Height = character height
         /// </remarks>
         public static Size GetSizeOfRange(Range range)
