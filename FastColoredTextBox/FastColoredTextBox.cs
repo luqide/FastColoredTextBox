@@ -41,8 +41,46 @@ using Timer = System.Windows.Forms.Timer;
 namespace FastColoredTextBoxNS
 {
     /// <summary>
-    /// Fast colored textbox
+    /// A high-performance text editor control with syntax highlighting, code folding, and advanced editing features.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// FastColoredTextBox is a powerful text editor component designed for .NET applications.
+    /// It provides rich text editing capabilities with excellent performance, even for very large files.
+    /// </para>
+    /// <para>
+    /// Key Features:
+    /// - Syntax highlighting for multiple languages (C#, VB, HTML, SQL, PHP, JavaScript, etc.)
+    /// - Code folding for collapsible regions
+    /// - Multi-level undo/redo
+    /// - Find and replace with regular expressions
+    /// - Auto-completion and IntelliSense-like features
+    /// - Line numbers and bookmarks
+    /// - Custom styling and rendering
+    /// - Word wrap
+    /// - Virtual space mode
+    /// - Macros recording and playback
+    /// - Export to HTML and RTF
+    /// </para>
+    /// <para>
+    /// Usage Example:
+    /// <code>
+    /// var textBox = new FastColoredTextBox();
+    /// textBox.Language = Language.CSharp;
+    /// textBox.Text = "using System;\nclass Program { }";
+    /// </code>
+    /// </para>
+    /// <para>
+    /// The control uses a layered architecture:
+    /// - TextSource: Manages text storage and undo/redo
+    /// - Range: Represents text selections and regions
+    /// - Style: Defines visual rendering
+    /// - SyntaxHighlighter: Applies language-specific formatting
+    /// </para>
+    /// <para>
+    /// For detailed architecture information, see ARCHITECTURE.md in the repository root.
+    /// </para>
+    /// </remarks>
     public partial class FastColoredTextBox : UserControl, ISupportInitialize
     {
         internal const int minLeftIndent = 8;
@@ -999,6 +1037,35 @@ namespace FastColoredTextBoxNS
         [Browsable(true)]
         [DefaultValue(typeof (Language), "Custom")]
         [Description("Language for highlighting by built-in highlighter.")]
+        /// <summary>
+        /// Gets or sets the programming language for syntax highlighting.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Setting this property automatically configures the syntax highlighter with
+        /// appropriate patterns and styles for the specified language. The control includes
+        /// built-in support for many common languages.
+        /// </para>
+        /// <para>
+        /// Supported languages include:
+        /// - C#, VB.NET
+        /// - HTML, XML
+        /// - SQL
+        /// - JavaScript, PHP
+        /// - Lua, JSON
+        /// - And many others (see Language enum)
+        /// </para>
+        /// <para>
+        /// Example:
+        /// <code>
+        /// textBox.Language = Language.CSharp;
+        /// </code>
+        /// </para>
+        /// <para>
+        /// You can also define custom languages using XML syntax descriptors via the
+        /// DescriptionFile property.
+        /// </para>
+        /// </remarks>
         public Language Language
         {
             get { return language; }
@@ -1170,6 +1237,37 @@ namespace FastColoredTextBoxNS
         /// Current selection range
         /// </summary>
         [Browsable(false)]
+        /// <summary>
+        /// Gets or sets the current text selection.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The Selection property provides access to the currently selected text range.
+        /// You can use it to:
+        /// - Get the selected text: Selection.Text
+        /// - Check if text is selected: !Selection.IsEmpty
+        /// - Modify the selection programmatically
+        /// - Apply styles to selected text
+        /// - Perform operations on the selection
+        /// </para>
+        /// <para>
+        /// Example:
+        /// <code>
+        /// // Select the first line
+        /// textBox.Selection = new Range(textBox, 0, 0, textBox[0].Count, 0);
+        /// 
+        /// // Get selected text
+        /// string selectedText = textBox.Selection.Text;
+        /// 
+        /// // Make selected text bold
+        /// textBox.Selection.SetStyle(myBoldStyle);
+        /// </code>
+        /// </para>
+        /// <para>
+        /// The selection is always a Range object. Even when no text is selected,
+        /// Selection represents a zero-width range at the caret position.
+        /// </para>
+        /// </remarks>
         public Range Selection
         {
             get { return selection; }
@@ -1372,6 +1470,40 @@ namespace FastColoredTextBoxNS
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         [Description("Text of the control.")]
         [Bindable(true)]
+        /// <summary>
+        /// Gets or sets the entire text content of the control.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The Text property provides access to all text in the control as a single string,
+        /// with lines separated by newline characters (\r\n on Windows).
+        /// </para>
+        /// <para>
+        /// Getting the text is efficient, but setting large amounts of text can be slow.
+        /// For better performance when appending text, use AppendText() instead.
+        /// </para>
+        /// <para>
+        /// Setting the Text property:
+        /// - Selects all existing text
+        /// - Replaces it with the new text
+        /// - Adds the operation to the undo stack
+        /// - Triggers TextChanged events
+        /// - Moves the caret to the beginning
+        /// </para>
+        /// <para>
+        /// Example:
+        /// <code>
+        /// // Set all text
+        /// textBox.Text = "Line 1\r\nLine 2\r\nLine 3";
+        /// 
+        /// // Get all text
+        /// string content = textBox.Text;
+        /// 
+        /// // Append text efficiently
+        /// textBox.AppendText("\r\nLine 4");
+        /// </code>
+        /// </para>
+        /// </remarks>
         public override string Text
         {
             get
